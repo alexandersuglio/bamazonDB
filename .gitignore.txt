@@ -1,1 +1,3 @@
 node_modules
+bamazonTest.js
+test.js

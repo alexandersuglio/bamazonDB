@@ -14,16 +14,16 @@ connection.connect(function(err) {
         throw err;
         console.log("ERROR: " + err);
     }
- // console.log("connection successful")
+    // console.log("connection successful")
 
 });
 
+var message = "Welcome to Bamazon! What Are You Looking For?";
 //prompt to make item selection
-//still wanna create else statement if a product is entered that's not in the database
 inquirer.prompt([
 
     {
-        message: "Enter product",
+        message: message,
         name: "name"
     }
 
@@ -31,46 +31,55 @@ inquirer.prompt([
 
     // selects particular item from db
     connection.query("select * from surf_gear where product = ?", answers.name, function(error, response) {
-        if (error) {
-            throw error
-        } else {
-
- //for loop which helps pick out specific item
-            for (var i = 0; i < response.length; i++) {
-//results below
-               console.log("Product ID: " + response[i].Product_ID + "\nProduct: " + response[i].Product + "\nPrice: $" + response[i].Price + "\nDepartment: " + response[i].Department + "\nNumber Left In Stock: " + response[i].Stock);
-            }
+        // console.log(response.length);
+        if (response.length === 0) {
+            console.log("ERROR: Product not found");
+            return
         }
 
- //second prompt to ask user amount they wanna buy
-        inquirer.prompt([
+        console.log("Product ID: " + response[0].Product_ID + "\nProduct: " + response[0].Product + "\nPrice: $" + response[0].Price + "\nDepartment: " + response[0].Department + "\nNumber Left In Stock: " + response[0].Stock);
 
-            {
-                message: "How many do you want to buy?",
-                name: "name2"
+        //second prompt to ask how many items you want to buy
+        inquirer.prompt([{
+            message: "How many do you wanna buy?",
+            name: "name2"
+        }]).then(function(answers) {
+
+
+            if (answers.name2 <= response[0].Stock) {
+                console.log("You wanna buy " + answers.name2);
+                var remainingInventory = response[0].Stock - answers.name2;
+                console.log("Inventory Remaining: " + remainingInventory);
+                console.log("Price: $" + answers.name2 * response[0].Price + ".00");
+
+                connection.query("UPDATE surf_gear SET Stock = " + remainingInventory + " where Product_ID = " + response[0].Product_ID, function(error, response) {
+
+                    if (error) {
+                        console.log("ERROR COMPLETING ORDER");
+                    } else { console.log("Thank you for ordering Bamazon!"); }
+                connection.end();
+
+                });
+
+            } else {
+                console.log("ERROR: Insufficient Stock");
+                return
             }
 
-        ]).then(function(answers) {
 
-            console.log("You wanna buy " + answers.name2);
-            console.log(response[i].Stock);
-
- //if else statement below I'm 'betaing' 
-
-            // if (answers.name2 > response[i].Stock) {
-            //     console.log("insuffient stock");
-
-            // } else {
-            //     console.log("Remaining Stock: " + response[i].Stock - answers.name2);
-            // }
-            // for (var j; j < response.length; j++) {
-            //     // console.log("you wanna buy " + answers.name2);
-            //     console.log(response[j].Stock);
-            // }
         });
-        // if (answers.name === undefined) {
-        //     console.log("Item not found, please try again");
-        // }
 
-    })
+
+    });
+
+
+
 });
+
+
+
+
+//     users SET foo = ? function (error, results) {
+//   if (error) throw error;
+//   // ... 
+// });
